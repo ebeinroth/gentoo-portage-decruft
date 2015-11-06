@@ -1,0 +1,27 @@
+# portage-decruft-0.1.5
+
+Emil Beinroth <emilbeinroth@gmx.net>:
+	- Small maintainance release
+
+# portage-decruft-0.1.4
+
+Emil Beinroth <emilbeinroth@gmx.net>:
+	- Fix typo in --list-issues parameter (the last s was missing)
+
+# portage-decruft-0.1.3
+
+Emil Beinroth <emilbeinroth@gmx.net>:
+    - Support for '-*' use flag stuff.
+
+# portage-decruft-0.1.2
+
+Emil Beinroth <emilbeinroth@gmx.net>:
+    - Brian <dol-sen_ AT telus DOT net> provided a patch to make
+      portage-decruft work with the new portage-2.2 module structure.
+      Thanks!
+
+# portage-decruft-0.1.1
+
+Emil Beinroth <emilbeinroth@gmx.net>:
+    - Stop stripping on both ends of useflags, since this breaks "c++" and
+      others. All hail bekks!
