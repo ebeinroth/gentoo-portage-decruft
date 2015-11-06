@@ -2,18 +2,9 @@
 portage-decruft - decruft /etc/portage
 ======================================
 
-:Author: Emil Beinroth <emilbeinroth AT gmx DOT net>
-:Copyright: Distributed under the terms of the GNU General Public License v2.
-
-.. contents:: Contents
-    :class: sidebar
-    :depth: 3
-    :backlinks: none
-
 The current version is portage-decruft-0.1.5-r4_. A ChangeLog_ is also available.
-Old versions are available from my `git repository`_ or the releases_ directory.
+Old versions are available from the releases_ directory.
 
-.. _git repository: http://cgit.shellarbyte.org/portage-decruft/
 .. _releases: releases/
 .. _portage-decruft-0.1.5-r4: releases/portage-decruft-0.1.5-r4
 .. _ChangeLog: ChangeLog.txt
@@ -51,19 +42,22 @@ Usage
 Options
 +++++++
 
--l, --list-issues   Show all available issues.
+::
 
--e, --enable LIST   Enable the listed issues. Use ',' as separator.
-                    ``*.exists`` and ``keywords.*`` will work as expected.
+    -l, --list-issues   Show all available issues.
 
--d, --disable LIST  Disable the listed issues. Use ',' as separator.
-                    ``*.exists`` and ``keywords.*`` will work as expected.
+    -e, --enable LIST   Enable the listed issues. Use ',' as separator.
+                        ``*.exists`` and ``keywords.*`` will work as expected.
 
--C, --no-color      Do not colorize output.
+    -d, --disable LIST  Disable the listed issues. Use ',' as separator.
+                        ``*.exists`` and ``keywords.*`` will work as expected.
 
--V, --version       Print version string.
+    -C, --no-color      Do not colorize output.
 
--h, --help          Show short help text.
+    -V, --version       Print version string.
+
+    -h, --help          Show short help text.
+
 
 Available `Issues`
 ==================
@@ -243,21 +237,25 @@ Alternatives
 There are some alternatives around. I will name them and explain why I rather
 wrote my own thing instead of using them.
 
-:eix-test-obsolete from `app-portage/eix`_:
+eix-test-obsolete from `app-portage/eix`_:
+
     - doesn't handle package.use all that well
     - takes about 3 times longer then portage-decruft
     - cleaning up /etc/portage doesn't really fit into eix, in my humble
       opinion
 
-:dep -E from `app-portage/udept`_:
+dep -E from `app-portage/udept`_:
+
     - has a lot of false positives
     - appears unmaintained
 
-:etcportclean_ (not yet in the tree):
+etcportclean_ (not yet in the tree):
+
     - changes your configuration, no --pretend mode
     - appears to be broken with some special masks (~-operator)
 
-:config-decruft_ for paludis:
+config-decruft_ for paludis:
+
     - I use portage, you insensitive clod!
 
 .. _app-portage/udept: http://catmur.co.uk/gentoo/udept/
