@@ -9,6 +9,8 @@ Old versions are available from the releases_ directory.
 .. _portage-decruft-0.1.5-r4: releases/portage-decruft-0.1.5-r4
 .. _ChangeLog: ChangeLog.txt
 
+.. contents:: :local:
+
 portage-decruft checks your configuration in /etc/portage (*package.keywords*,
 *package.mask*, *package.unmask* and *package.use*) and reports on any
 redundant, obsolete or irrelevant entries. It is possible to ignore specific
