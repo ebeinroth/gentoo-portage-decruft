@@ -1,10 +1,8 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 
-# py-decruft - check /etc/portage for stupid stuff.
+# portage-decruft - check /etc/portage for stupid stuff.
 
-# Copyright (2008): Emil Beinroth <emilbeinroth@gmx.net>
-
-# $Id: portage-decruft 10 2008-06-02 17:58:43Z appro $
+# Copyright: Emil Beinroth <emilbeinroth@gmx.net>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,24 +20,28 @@
 
 __author__      = 'Emil Beinroth'
 __email__       = 'emilbeinroth@gmx.net'
-__version__     = '0.1.1'
+__version__     = '0.1.5-r4'
 __productname__ = 'portage-decruft'
 __description__ = 'Cleaning tool for /etc/portage/ configuration.'
-__rev__         = ''.join([x for x in "$Rev: 10 $" if x.isdigit()])
 
 import os, sys, getopt, fnmatch, string
 
-try:
-    import portage
-    from portage_const import INCREMENTALS, USER_CONFIG_PATH
-except Exception, e:
-    stderr.write('!!! Unable to import portage modules: %s\n' % e)
-    exit(1)
 
-KEYWORDS_FILE = os.path.join(USER_CONFIG_PATH, "package.keywords")
-USE_FILE = os.path.join(USER_CONFIG_PATH, "package.use")
-MASK_FILE = os.path.join(USER_CONFIG_PATH, "package.mask")
-UNMASK_FILE = os.path.join(USER_CONFIG_PATH, "package.unmask")
+try: # >= portage-2.2
+    import portage
+    from portage.const import INCREMENTALS, USER_CONFIG_PATH
+    from portage import output
+    from portage.util import Atom
+    from portage.dep  import Atom as DepAtom
+except: # <=portage-2.1.x
+    from sys import stderr
+    try:
+        import portage
+        from portage_const import INCREMENTALS, USER_CONFIG_PATH
+        import output
+    except Exception, e:
+        stderr.write('!!! Unable to import portage modules: %s\n' % e)
+        exit(1)
 
 AVAILABLE_ISSUES = [
         "keywords.exists",
@@ -91,7 +93,7 @@ def enable_issues(seq):
 # Parse option string from sys.argv
 def parse_options():
     try:
-        long_opts = [ "list-issue", "enable=", "disable=", "no-color",
+        long_opts = [ "list-issues", "enable=", "disable=", "no-color",
                       "nocolor", "version", "help" ]
         options, args = getopt.gnu_getopt(sys.argv[1:], "le:d:hVC", long_opts)
     except getopt.GetoptError, e:
@@ -99,7 +101,7 @@ def parse_options():
         exit(1)
 
     for opt in options:
-        if opt[0] in ('-l', '--list-issue'):
+        if opt[0] in ('-l', '--list-issues'):
             print "\n".join(AVAILABLE_ISSUES)
             exit(0)
         elif opt[0] in ('-e', '--enable'):
@@ -107,10 +109,10 @@ def parse_options():
         elif opt[0] in ('-d', '--disable'):
             disable_issues(map(string.strip, opt[1].split(',')))
         elif opt[0] in ('-V', '--version'):
-            print 'portage-decruft-%s-rev%s' % (__version__, __rev__)
+            print 'portage-decruft-%s' % __version__
             exit(0)
         elif opt[0] in ('-C', '--no-color', '--nocolor'):
-            import output
+            #import output
             output.nocolor()
         elif opt[0] in ('-h', '--help'):
             print_help()
@@ -157,7 +159,7 @@ def warn_installed_out_of_date(cpv):
 warn_installed_out_of_date._warned_for = set()
 
 def color(wrappee):
-    mod = __import__('output')
+    mod = output #__import__('output')
     def fun(s, sep=', '):
         if isinstance(s, (tuple, list, set)):
             return sep.join(map(fun, s))
@@ -233,8 +235,8 @@ def match_all(cpv):
 def match_visible(cpv):
     return portdb.xmatch('match-visible', cpv)
 
-def version_from(s):
-    return '-'.join(portage.pkgsplit(portage.dep_getcpv(s))[1:])
+def pkgcmp(s1, s2):
+    return portage.pkgcmp(portage.pkgsplit(s1), portage.pkgsplit(s2))
 
 def masked_why(cpv):
     return portage.getmaskingstatus(cpv, settings=settings)
@@ -244,17 +246,11 @@ def masked_why(cpv):
 
 def do_unmask(atom):
     mycatpkg=portage.dep_getkey(atom)
-    if settings.punmaskdict.has_key(mycatpkg):
-        settings.punmaskdict[mycatpkg].append(atom)
-    else:
-        settings.punmaskdict[mycatpkg]=[atom]
+    settings.punmaskdict.setdefault(mycatpkg, []).append(atom)
 
 def do_mask(atom):
     mycatpkg=portage.dep_getkey(atom)
-    if settings.pmaskdict.has_key(mycatpkg):
-        settings.pmaskdict[mycatpkg].append(atom)
-    else:
-        settings.pmaskdict[mycatpkg]=[atom]
+    settings.pmaskdict.setdefault(mycatpkg, []).append(atom)
 
 def do_keywords(key, value):
     value = value.split()
@@ -271,23 +267,17 @@ def do_keywords(key, value):
                 mykeywordlist.append("~"+keyword)
         value = mykeywordlist
     cp = portage.dep_getkey(key)
-    if not settings.pkeywordsdict.has_key(cp):
-        settings.pkeywordsdict[cp] = {}
-    settings.pkeywordsdict[cp][key] = value
-
+    settings._keywords_manager.pkeywordsdict.setdefault(cp, {})[DepAtom(key)] = value
 
 # has_redundancy(..) -> overall_redundant, redundant_tokens
 def has_redundancy(old_set, change_set, resolve=True):
-    if not resolve:
-        redundant_set = old_set.intersection(set(change_set))
-        redundant_change = [x for x in change_set if change_set.count(x) > 1]
-        return bool(redundant_set), redundant_set + redundant_change
-
     redundant_set = set()
     working_set = set(old_set)
     for flag in change_set:
         if flag[0] == '-':
-            if flag[1:] not in working_set:
+            if flag[1:] == '*':
+                working_set = set()
+            elif flag[1:] not in working_set:
                 redundant_set.add(flag)
             else: working_set.discard(flag[1:])
         else:
@@ -306,9 +296,16 @@ if __name__ == '__main__':
     trees = portage.create_trees()
     trees[portage.root]["porttree"].settings = settings
     portdb = trees[portage.root]["porttree"].dbapi
-    portdb.mysettings = settings
+    portdb.settings = settings
     vardb = trees[portage.root]["vartree"].dbapi
-    vardb.mysettings = settings
+    vardb.settings = settings
+
+    
+
+    KEYWORDS_FILE = os.path.join(settings["PORTAGE_CONFIGROOT"], USER_CONFIG_PATH, "package.keywords")
+    USE_FILE = os.path.join(settings["PORTAGE_CONFIGROOT"], USER_CONFIG_PATH, "package.use")
+    MASK_FILE = os.path.join(settings["PORTAGE_CONFIGROOT"], USER_CONFIG_PATH, "package.mask")
+    UNMASK_FILE = os.path.join(settings["PORTAGE_CONFIGROOT"], USER_CONFIG_PATH, "package.unmask")
 
     ## read package.keywords ##
     for skip, (atom, kws), where in read_config(KEYWORDS_FILE):
@@ -342,7 +339,7 @@ if __name__ == '__main__':
             continue
 
         # reaons: irrelevant
-        if portage.vercmp(version_from(installed[0]), version_from(all_cpv[-1])) > 0:
+        if pkgcmp(installed[0], all_cpv[-1]) > 0:
             report('keywords.irrelevant', where, atom, 'only changes irrelevant versions')
             continue
 
@@ -364,6 +361,8 @@ if __name__ == '__main__':
 
         use = use.split()
         use_not_in_iuse = set(seq_lstrip(use, '+-'))
+        # There may be a '-*' present, remove it.
+        use_not_in_iuse.discard('*')
         for cpv in installed:
             try: iuse = seq_lstrip(portdb.aux_get(cpv, ["IUSE"])[0].split(), '+-')
             except KeyError, e:
@@ -379,7 +378,8 @@ if __name__ == '__main__':
 
         redundancy_list = []
         for cpv in installed:
-            try: settings.setcpv(cpv, mydb=portdb)
+            try:
+                settings.setcpv(cpv, mydb=portdb)
             except KeyError, e:
                 # Installed version that is no longer available through
                 # portage. I will not start guessing.
@@ -449,7 +449,7 @@ if __name__ == '__main__':
             report('unmask.redundant', where, atom, "not 'masked by package.mask'")
             continue
 
-        if portage.vercmp(version_from(installed[0]), version_from(matches[-1])) > 0:
+        if pkgcmp(installed[0], matches[-1]) > 0:
             report('unmask.irrelevant', where, atom, 'only changes irrelevant versions')
             continue
 
@@ -457,7 +457,7 @@ if __name__ == '__main__':
 
 
     def check_simple_file(group, path):
-        for skip, (atom, ignore), where in read_config(os.path.join(USER_CONFIG_PATH, path)):
+        for skip, (atom, ignore), where in read_config(os.path.join(settings["PORTAGE_CONFIGROOT"], USER_CONFIG_PATH, path)):
             if skip: continue
             matches = match_all(atom)
             if not matches:
@@ -469,7 +469,7 @@ if __name__ == '__main__':
                 report('%s.not_installed' % group, where, atom, "not installed")
                 continue
 
-            if portage.vercmp(version_from(installed[0]), version_from(matches[-1])) > 0:
+            if pkgcmp(installed[0], matches[-1]) > 0:
                 report('%s.irrelevant' % group, where, atom, 'only changes irrelevant versions')
                 continue
 

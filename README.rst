@@ -2,11 +2,10 @@
 portage-decruft - decruft /etc/portage
 ======================================
 
-The current version is portage-decruft-0.1.5-r4_. A ChangeLog_ is also available.
-Old versions are available from the releases_ directory.
+The current version of portage-decruft_ is 0.1.5-r4. A ChangeLog_ is also
+available.
 
-.. _releases: releases/
-.. _portage-decruft-0.1.5-r4: releases/portage-decruft-0.1.5-r4
+.. _portage-decruft: src/portage-decruft
 .. _ChangeLog: ChangeLog.txt
 
 .. contents:: :local:
