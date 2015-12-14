@@ -6,7 +6,7 @@ The current version of portage-decruft_ is 0.1.5-r4. A ChangeLog_ is also
 available.
 
 .. _portage-decruft: src/portage-decruft
-.. _ChangeLog: ChangeLog.txt
+.. _ChangeLog: ChangeLog
 
 .. contents:: :local:
 
